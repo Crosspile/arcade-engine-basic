@@ -212,63 +212,66 @@ export class GameRenderer implements MenuContext {
         const h = this.activeGame.height;
         const maxDim = Math.max(w, h);
         const aspect = window.innerWidth / window.innerHeight;
-        
-        // --- Step 1: Position the world camera and scale the world group ---
+
+        // Step 1: Configure the active camera and scale the game group
         if (this.isOrtho) {
-            // Use a fixed orthographic view height for consistent UI scale
-            const ORTHO_VIEW_HEIGHT = 12;
-
-            // Set the camera to a fixed size
-            this.orthoCam.top = ORTHO_VIEW_HEIGHT / 2;
-            this.orthoCam.bottom = -ORTHO_VIEW_HEIGHT / 2;
-            this.orthoCam.left = -ORTHO_VIEW_HEIGHT / 2 * aspect;
-            this.orthoCam.right = ORTHO_VIEW_HEIGHT / 2 * aspect;
-            this.orthoCam.position.set(0, 0, 10);
-            this.orthoCam.lookAt(0, 0, 0);
-            this.orthoCam.updateProjectionMatrix();
-
-            // Calculate the scale needed to fit the game board into the fixed view
-            const TILE_SIZE = 1.1; // As used in sync()
-            const gameWorldHeight = h * TILE_SIZE;
-            const gameWorldWidth = w * TILE_SIZE;
-            
-            const availableHeight = ORTHO_VIEW_HEIGHT * 0.9;
-            const availableWidth = (ORTHO_VIEW_HEIGHT * aspect) * 0.9;
-            
-            const scaleY = gameWorldHeight > 0 ? availableHeight / gameWorldHeight : 1;
-            const scaleX = gameWorldWidth > 0 ? availableWidth / gameWorldWidth : 1;
-            
-            const scale = Math.min(scaleX, scaleY);
-            this.group.scale.set(scale, scale, scale);
+            this._setupOrthoCamera(w, h, aspect);
         } else {
-            // Reset group scale for perspective view
-            this.group.scale.set(1, 1, 1);
-
-            this.perspCam.aspect = aspect;
-            const distance = maxDim * 2.0; 
-            this.perspCam.position.set(0, 0, distance);
-            this.perspCam.lookAt(0, 0, 0);
-            this.perspCam.updateProjectionMatrix();
+            this._setupPerspCamera(maxDim, aspect);
         }
 
-        // --- Step 2: Calculate the visible bounds for the UI based on the UPDATED camera ---
-        const UI_DISTANCE = 8;
-        let visibleHeight, visibleWidth;
-
-        if (this.activeCamera instanceof THREE.PerspectiveCamera) {
-            const vFOV = THREE.MathUtils.degToRad(this.activeCamera.fov);
-            visibleHeight = 2 * Math.tan(vFOV / 2) * Math.abs(UI_DISTANCE);
-            visibleWidth = visibleHeight * this.activeCamera.aspect;
-        } else if (this.activeCamera instanceof THREE.OrthographicCamera) {
-            visibleHeight = this.activeCamera.top - this.activeCamera.bottom;
-            visibleWidth = this.activeCamera.right - this.activeCamera.left;
-        } else { // Fallback
-            visibleHeight = 10;
-            visibleWidth = 10 * aspect;
-        }
-        
-        // --- Step 3: Pass the correct, updated bounds to the UI ---
+        // Step 2: Layout the HUD based on the final camera's visible area
+        const { visibleWidth, visibleHeight } = this._getUIVisibleBounds(this.activeCamera);
         this.menu.layoutHUD(visibleWidth, visibleHeight);
+    }
+
+    private _setupOrthoCamera(gameWidth: number, gameHeight: number, aspect: number) {
+        // Use a fixed orthographic view height for consistent UI scale
+        const ORTHO_VIEW_HEIGHT = 12;
+
+        this.orthoCam.top = ORTHO_VIEW_HEIGHT / 2;
+        this.orthoCam.bottom = -ORTHO_VIEW_HEIGHT / 2;
+        this.orthoCam.left = -ORTHO_VIEW_HEIGHT / 2 * aspect;
+        this.orthoCam.right = ORTHO_VIEW_HEIGHT / 2 * aspect;
+        this.orthoCam.position.set(0, 0, 10);
+        this.orthoCam.lookAt(0, 0, 0);
+        this.orthoCam.updateProjectionMatrix();
+
+        // Calculate the scale needed to fit the game board into the fixed view
+        const TILE_SIZE = 1.1; // As used in sync()
+        const gameWorldHeight = gameHeight * TILE_SIZE;
+        const gameWorldWidth = gameWidth * TILE_SIZE;
+        
+        const availableHeight = ORTHO_VIEW_HEIGHT * 0.9; // Use 90% of view for padding
+        const availableWidth = (ORTHO_VIEW_HEIGHT * aspect) * 0.9;
+        
+        const scaleY = gameWorldHeight > 0 ? availableHeight / gameWorldHeight : 1;
+        const scaleX = gameWorldWidth > 0 ? availableWidth / gameWorldWidth : 1;
+        
+        const scale = Math.min(scaleX, scaleY);
+        this.group.scale.set(scale, scale, scale);
+    }
+
+    private _setupPerspCamera(maxDim: number, aspect: number) {
+        this.group.scale.set(1, 1, 1);
+        this.perspCam.aspect = aspect;
+        const distance = maxDim * 2.0; 
+        this.perspCam.position.set(0, 0, distance);
+        this.perspCam.lookAt(0, 0, 0);
+        this.perspCam.updateProjectionMatrix();
+    }
+
+    private _getUIVisibleBounds(camera: THREE.Camera, distance: number = 8) {
+        const aspect = window.innerWidth / window.innerHeight;
+        if (camera instanceof THREE.PerspectiveCamera) {
+            const vFOV = THREE.MathUtils.degToRad(camera.fov);
+            const visibleHeight = 2 * Math.tan(vFOV / 2) * Math.abs(distance);
+            return { visibleWidth: visibleHeight * camera.aspect, visibleHeight };
+        } else if (camera instanceof THREE.OrthographicCamera) {
+            return { visibleWidth: camera.right - camera.left, visibleHeight: camera.top - camera.bottom };
+        }
+        // Fallback
+        return { visibleWidth: 10 * aspect, visibleHeight: 10 };
     }
     
     createLabelTexture(text: string, bgColor: number, textColor: string = '#ffffff') {
