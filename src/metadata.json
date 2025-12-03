@@ -1,0 +1,5 @@
+{
+  "name": "Arcade Engine React",
+  "description": "A multi-game arcade engine using React, TypeScript, Three.js, and RxJS. Features Match-3, Sokoban, Tetris, Snake, 2048, Lights Out, Minesweeper, Memory, Simon, TicTacToe, Sliding Puzzle, Connect 4, Whack-A-Mole, SameGame, Maze Run, Flappy Bird, and Bubble Shooter.",
+  "requestFramePermissions": []
+}
