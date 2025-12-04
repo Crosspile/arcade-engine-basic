@@ -11,16 +11,12 @@ import { MemoryGame } from './Memory';
 import { SimonGame } from './Simon';
 import { TicTacToe } from './TicTacToe';
 import { SlidingPuzzle } from './SlidingPuzzle';
-import { Connect4 } from './Connect4';
 import { WhackAMole } from './WhackAMole';
 import { SameGame } from './SameGame';
-import { Flappy } from './Flappy';
 import { Sudoku } from './Sudoku';
 import { Crossword } from './Crossword';
-import { ZumZumGame } from './ZumZum';
 import { MazeRun } from './MazeRun';
 import { SoundEmitter } from '../types';
-import { BubbleShooterGame } from './BubbleShooter';
 
 const DEBUG_HANDLERS: Record<string, (game: GameModel) => void> = {
     '2048': (game) => {
@@ -56,7 +52,6 @@ export interface GameDefinition {
 
 // The single source of truth for all games
 const ALL_GAMES: GameDefinition[] = [
-    { id: 'bubble', name: 'Bubble Shooter', class: BubbleShooterGame, debug: DEBUG_HANDLERS.default },
     { id: 'sokoban', name: 'Sokoban', class: SokobanGame, debug: DEBUG_HANDLERS.default },
     { id: 'match3', name: 'Match-3', class: Match3Game, debug: DEBUG_HANDLERS.default},
     { id: 'tetris', name: 'Tetris', class: TetrisGame, debug: DEBUG_HANDLERS.default },
@@ -68,14 +63,11 @@ const ALL_GAMES: GameDefinition[] = [
     { id: 'simon', name: 'Simon', class: SimonGame, debug: DEBUG_HANDLERS.default },
     { id: 'tictactoe', name: 'Tic Tac Toe', class: TicTacToe, debug: DEBUG_HANDLERS.default },
     { id: 'sliding', name: 'Sliding Puzzle', class: SlidingPuzzle, debug: DEBUG_HANDLERS.default },
-    { id: 'connect4', name: 'Connect 4', class: Connect4, debug: DEBUG_HANDLERS.default },
     { id: 'whackamole', name: 'Whack-A-Mole', class: WhackAMole, debug: DEBUG_HANDLERS.default },
     { id: 'samegame', name: 'SameGame', class: SameGame, debug: DEBUG_HANDLERS.default },
     { id: 'mazerun', name: 'Maze Run', class: MazeRun, debug: DEBUG_HANDLERS.default },
-    { id: 'flappy', name: 'Flappy', class: Flappy, debug: DEBUG_HANDLERS.default },
     { id: 'sudoku', name: 'Sudoku', class: Sudoku, debug: DEBUG_HANDLERS.default },
     { id: 'crossword', name: 'Mini Crossword', class: Crossword, debug: DEBUG_HANDLERS.default },
-    { id: 'zumzum', name: 'ZumZum', class: ZumZumGame, debug: DEBUG_HANDLERS.default },
 ];
 
 

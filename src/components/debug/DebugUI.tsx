@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GAME_LIST } from '../../games/GameList';
+import { GAME_LIST } from '../../games/GameRegistry';
 
 interface DebugProps {
     gameId: string;

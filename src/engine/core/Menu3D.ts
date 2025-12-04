@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Subscription, filter } from 'rxjs';
 import { TWEEN } from '../../utils/tween';
 import { InputManager } from './InputManager';
-import { GAME_IDS } from '../../games/GameList';
+import { GAME_IDS } from '../../games/GameRegistry';
 import { MenuContext } from './MenuContext';
 import { SoundEmitter } from '../../types';
 
