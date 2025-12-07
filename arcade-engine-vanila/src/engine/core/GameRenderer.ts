@@ -39,7 +39,7 @@ export class GameRenderer implements MenuContext {
     private subs: Subscription[] = [];
     private updateHooks: (() => void)[] = [];
     
-    constructor(container: HTMLElement, inputManager: InputManager, callbacks: MenuCallbacks, audio: SoundEmitter) {
+    constructor(container: HTMLElement, inputManager: InputManager, callbacks: MenuCallbacks, audio: SoundEmitter, gameList: GameItem[]) {
         this.inputManager = inputManager;
         this.audio = audio;
         
@@ -88,7 +88,7 @@ export class GameRenderer implements MenuContext {
         this.particles = new ParticleManager(this.scene);
 
         // Menu is now parented to the camera for consistent scale
-        this.menu = new Menu3D(this.activeCamera, inputManager, this, callbacks, this.audio);
+        this.menu = new Menu3D(this.activeCamera, inputManager, this, callbacks, this.audio, gameList);
         
         // Start Loop
         this.animate = this.animate.bind(this);

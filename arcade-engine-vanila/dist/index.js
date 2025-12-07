@@ -1,4 +1,6 @@
-import { a as GAME_LIST, i as GameRenderer, n as SoundManager, o as GAME_REGISTRY, r as InputManager, t as DebugCamera } from "./engine.js";
+import { i as GameRenderer, n as SoundManager, r as InputManager, t as DebugCamera } from "./engine.js";
+
+import { n as GAME_REGISTRY, t as GAME_LIST } from "./game-registry.js";
 
 //#region \0vite/modulepreload-polyfill.js
 (function polyfill() {
@@ -261,7 +263,7 @@ var App = class {
                     this.updateUI();
                 }
             }
-        }, this.audio);
+        }, this.audio, GAME_LIST);
         this.debugCam = new DebugCamera(this.engine);
         this.inputManager.action$.subscribe(action => {
             if (this.activeGame && !this.activeGame.isPaused) if (action.type === "SELECT" && action.data && action.data.raycaster && this.engine) {

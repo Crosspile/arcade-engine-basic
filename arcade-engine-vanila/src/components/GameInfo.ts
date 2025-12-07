@@ -1,5 +1,5 @@
 
-import { GAME_REGISTRY } from '../games/GameRegistry';
+import { GAME_REGISTRY } from '../GameRegistry';
 
 export class GameInfo {
     private element: HTMLDivElement;

@@ -2,7 +2,6 @@
 import { Subscription, filter } from 'rxjs';
 import * as THREE from 'three'
 import { InputManager } from './InputManager';
-import { GAME_IDS } from '../../games/GameRegistry';
 import type { SoundEmitter } from '../../../../arcade-engine-react/types';
 import { TWEEN } from '../utils/tween';
 import type { MenuContext } from './MenuContext';
@@ -15,6 +14,7 @@ export interface MenuCallbacks {
 }
 
 export interface MenuItem { text: string; action: string; dynamic?: boolean; }
+export interface GameItem { id: string; name: string; }
 
 const HUD_MARGIN_X = 0.5;
 const HUD_MARGIN_Y = 0.5; 
@@ -42,7 +42,7 @@ export class Menu3D {
     statusLabel: THREE.Mesh | null = null;
     highScoreLabel: THREE.Mesh | null = null;
 
-    constructor(camera: THREE.Camera, inputManager: InputManager, public renderer: MenuContext, public callbacks: MenuCallbacks, audio: SoundEmitter) {
+    constructor(camera: THREE.Camera, inputManager: InputManager, public renderer: MenuContext, public callbacks: MenuCallbacks, audio: SoundEmitter, gameList: GameItem[]) {
         if (!Menu3D.sharedGeometry) {
             Menu3D.sharedGeometry = new THREE.PlaneGeometry(4, 1);
         }
@@ -62,7 +62,7 @@ export class Menu3D {
             { text: 'CLOSE', action: 'close' }
         ]);
         
-        const gameItems: MenuItem[] = GAME_IDS.map(id => ({ text: id.toUpperCase(), action: `game:${id}` }));
+        const gameItems: MenuItem[] = gameList.map(game => ({ text: game.name.toUpperCase(), action: `game:${game.id}` }));
         gameItems.push({ text: 'BACK', action: 'back' });
         this.registerMenu('games', gameItems);
 

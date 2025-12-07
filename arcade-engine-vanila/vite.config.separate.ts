@@ -33,8 +33,14 @@ const separateBuildOptions: { build: BuildOptions } = {
         assetFileNames: `[name].[ext]`,
         // Custom logic for chunk file names
         manualChunks: (id: string) => {
-          if (id.includes('/src/engine/')) return 'engine';
-          if (id.includes('/src/games/GameRegistry.ts')) return 'game-registry';
+          // Separate the engine code into its own chunk.
+          if (id.includes('/src/engine/')) {
+            return 'engine';
+          }
+          // Separate the game registry code into its own chunk.
+          if (id.includes('src/GameRegistry')) {
+            return 'game-registry';
+          }
         },
         chunkFileNames: (chunkInfo) => {
           // If the chunk is a game (based on the dynamic import path), place it in the 'games' folder

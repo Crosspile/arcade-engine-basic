@@ -4,7 +4,7 @@ import { InputManager } from './engine/core/InputManager';
 import { SoundManager } from './engine/core/SoundManager';
 import { DebugCamera } from './engine/debug/DebugCamera';
 import { GameModel } from './games/GameModel';
-import { GAME_REGISTRY, GAME_LIST } from './games/GameRegistry';
+import { GAME_REGISTRY, GAME_LIST } from './GameRegistry.ts';
 import { DebugUI } from './components/debug/DebugUI';
 import { GameInfo } from './components/GameInfo.ts';
 import { VirtualControls } from './components/VirtualControls.ts';
@@ -88,7 +88,7 @@ export class App {
             }
         };
 
-        this.engine = new GameRenderer(this.gameContainer, this.inputManager, callbacks, this.audio);
+        this.engine = new GameRenderer(this.gameContainer, this.inputManager, callbacks, this.audio, GAME_LIST);
         this.debugCam = new DebugCamera(this.engine);
 
         this.inputManager.action$.subscribe(action => {

@@ -1,4 +1,4 @@
-import { GAME_LIST } from '../../games/GameRegistry';
+import { GAME_LIST } from '../../GameRegistry';
 import type { GameId } from '../../engine/types';
 
 interface DebugUIState {
