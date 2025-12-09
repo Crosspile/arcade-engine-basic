@@ -1,4 +1,4 @@
-import { t as GameModel } from "../GameModel.js";
+import { GameModel } from "../GameModel.js";
 
 //#region src/games/SlidingPuzzle.ts
 var SlidingPuzzle = class extends GameModel {

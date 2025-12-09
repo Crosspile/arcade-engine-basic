@@ -1,4 +1,4 @@
-import { t as GameModel } from "../GameModel.js";
+import { GameModel } from "../GameModel.js";
 
 //#region src/games/Sokoban.ts
 var SokobanGame = class extends GameModel {

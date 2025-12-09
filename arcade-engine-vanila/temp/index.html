@@ -153,9 +153,9 @@
                 loader: () => window.importFromBlobUrl(gameUrls[game.fileName]),
               };
 
-              // Add the game to the minified GAME_LIST (t) and GAME_REGISTRY (n).
-              gameRegistryModule.t.push({ id: newGameEntry.id, name: newGameEntry.name }); 
-              gameRegistryModule.n[newGameEntry.id] = newGameEntry;
+              // Add the game to the GAME_LIST and GAME_REGISTRY.
+              gameRegistryModule.GAME_LIST.push({ id: newGameEntry.id, name: newGameEntry.name }); 
+              gameRegistryModule.GAME_REGISTRY[newGameEntry.id] = newGameEntry;
             }
 
             // 3. Finally, import the main entry point which will now see the augmented game list.

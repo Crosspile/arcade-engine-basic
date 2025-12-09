@@ -1,4 +1,4 @@
-import { t as GameModel } from "../GameModel.js";
+import { GameModel } from "../GameModel.js";
 
 //#region src/games/Simon.ts
 var SimonGame = class extends GameModel {
@@ -10,7 +10,7 @@ var SimonGame = class extends GameModel {
         super(2, 2, "simon", audio);
     }
     start() {
-        this.level = 3;
+        this.level = 1;
         this.startLevel();
     }
     startLevel() {
