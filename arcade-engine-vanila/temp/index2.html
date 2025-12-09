@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>arcade-engine-vanila</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://esm.sh/three@0.181.2",
+        "rxjs": "https://esm.sh/rxjs@7.8.2"
+      }
+    }
+    </script>
+    <style>
+      /* Paste the content of /index.css here */
+    </style>
+    <!-- <link rel="modulepreload" crossorigin href="/game-registry.js"> -->
+    <script type="module">
+      const GITHUB_BASE_URL = 'https://raw.githubusercontent.com/crosspiler/arcade-engine-basic/main/arcade-engine-vanila/dist';
+      
+      // =================================================================================
+      // CONFIGURATION
+      // =================================================================================
+
+      const scriptUrls = {
+        engine: `${GITHUB_BASE_URL}/engine.js`,
+        gameRegistry: `${GITHUB_BASE_URL}/game-registry.js`,
+        main: `${GITHUB_BASE_URL}/index.js`,
+      };
+
+      const gameUrls = {
+        'Snake.js': './games/Snake.js', // Local
+        // 'Snake.js': `${GITHUB_BASE_URL}/games/Snake.js`,
+        'Sokoban.js': `${GITHUB_BASE_URL}/games/Sokoban.js`,
+        'Match3.js': `${GITHUB_BASE_URL}/games/Match3.js`,
+        'Tetris.js': `${GITHUB_BASE_URL}/games/Tetris.js`,
+        'Game2048.js': `${GITHUB_BASE_URL}/games/Game2048.js`,
+        'LightsOut.js': `${GITHUB_BASE_URL}/games/LightsOut.js`,
+        'Minesweeper.js': `${GITHUB_BASE_URL}/games/Minesweeper.js`,
+        'Memory.js': `${GITHUB_BASE_URL}/games/Memory.js`,
+        'Simon.js': `${GITHUB_BASE_URL}/games/Simon.js`,
+        'TicTacToe.js': `${GITHUB_BASE_URL}/games/TicTacToe.js`,
+        'SlidingPuzzle.js': `${GITHUB_BASE_URL}/games/SlidingPuzzle.js`,
+        'WhackAMole.js': `${GITHUB_BASE_URL}/games/WhackAMole.js`,
+        'SameGame.js': `${GITHUB_BASE_URL}/games/SameGame.js`,
+        'MazeRun.js': `${GITHUB_BASE_URL}/games/MazeRun.js`,
+        'Sudoku.js': `${GITHUB_BASE_URL}/games/Sudoku.js`,
+        'Crossword.js': `${GITHUB_BASE_URL}/games/Crossword.js`,
+        'GameModel.js': `${GITHUB_BASE_URL}/GameModel.js`,
+      }
+
+      // 2. Define a list of local games to add to the registry.
+      const localGamesToAdd = [
+        // --- Example of a game from a local file ---
+        { id: 'memorymatrix', name: 'Memory Matrix', fileName: 'MemoryMatrix.js' },
+        
+        // --- Example of a game defined in a script tag below ---
+        { id: 'inline-snake', name: 'Inline Snake', scriptId: 'inline-snake-game' },
+        // Add more local games here in the future
+      ];
+
+      // =================================================================================
+      // DYNAMIC MODULE LOADER
+      // =================================================================================
+
+      /**
+       * Cache for generated blob URLs to avoid re-processing the same file.
+       * @type {Map<string, string>}
+       */
+      const blobCache = new Map();
+
+      /**
+       * Fetches a JavaScript module from a URL, processes its dependencies,
+       * converts it to a blob URL, and imports it. This allows for loading
+       * modules from different origins (local, remote) and handling build
+       * inconsistencies (e.g., minified vs. unminified code).
+       * @param {string} url The URL of the JavaScript module to load.
+       * @returns {Promise<any>} A promise that resolves to the imported module's exports.
+       */
+      async function importFromBlobUrl(url) {
+        // 1. Check cache to avoid redundant work.
+        if (blobCache.has(url)) {
+          return import(blobCache.get(url));
+        }
+
+        // 2. Fetch the script content.
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch script for blob: ${url}`);
+        }
+        let scriptText = await response.text();
+
+        // 3. Handle special case: the remote game registry from Vite.
+        // It uses a `__vitePreload` helper for dynamic imports. We must replace
+        // this with our own loader to ensure all games are loaded via this function.
+        if (url === scriptUrls.gameRegistry) {
+            scriptText = scriptText.replace(/__vitePreload\(\(\) => import\("(\.\/games\/[^"]+)"\), __vite__mapDeps\(\[.+?\]\)\)/g, (match, p1) => {
+                const gameFileName = p1.split('/').pop();
+                // Replace with a call to our universal blob importer.
+                return `window.importFromBlobUrl("${gameUrls[gameFileName] || p1}")`;
+            });
+        }
+
+        // 4. Recursively process all relative dependencies within the script.
+        const importRegex = /from\s+['"](\.\.?\/[^'"]+)['"]/g;
+        const matches = [...scriptText.matchAll(importRegex)];
+        const baseUrl = url.startsWith('.') ? window.location.href : url;
+
+        for (const match of matches) {
+            const relativePath = match[1];
+            const dependencyFilename = relativePath.split('/').pop();
+
+            // Resolve the dependency's full URL. Prioritize the `gameUrls` map for shared
+            // modules (like GameModel.js), then fall back to standard URL resolution.
+            const absoluteUrl = gameUrls[dependencyFilename] || new URL(relativePath, baseUrl).href;
+
+            // Recursively load the dependency to ensure it's in the blobCache.
+            await importFromBlobUrl(absoluteUrl);
+            
+            // Replace the static relative path in the script text with the dynamic blob URL.
+            scriptText = scriptText.replace(relativePath, blobCache.get(absoluteUrl));
+        }
+
+        // 5. Create a blob from the modified script, generate a URL, and cache it.
+        const blob = new Blob([scriptText], { type: 'text/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        blobCache.set(url, blobUrl);
+
+        // 6. Import the module from the blob URL.
+        return import(blobUrl);
+      }
+
+      /**
+       * Converts a string of JavaScript source code into an importable module.
+       * It processes dependencies in the same way as `importFromBlobUrl`.
+       * @param {string} sourceText The JavaScript code to process.
+       * @param {string} cacheId A unique ID to use for caching this module.
+       * @returns {Promise<any>} A promise that resolves to the imported module's exports.
+       */
+      async function importFromString(sourceText, cacheId) {
+        // 1. Check cache to avoid redundant work.
+        if (blobCache.has(cacheId)) {
+          return import(blobCache.get(cacheId));
+        }
+
+        let scriptText = sourceText;
+
+        // 2. Recursively process all relative dependencies within the script.
+        const importRegex = /from\s+['"](\.\.?\/[^'"]+)['"]/g;
+        const matches = [...scriptText.matchAll(importRegex)];
+        const baseUrl = window.location.href; // Base for resolving local paths
+
+        for (const match of matches) {
+            const relativePath = match[1];
+            const dependencyFilename = relativePath.split('/').pop();
+            const absoluteUrl = gameUrls[dependencyFilename] || new URL(relativePath, baseUrl).href;
+
+            await importFromBlobUrl(absoluteUrl);
+            scriptText = scriptText.replace(relativePath, blobCache.get(absoluteUrl));
+        }
+
+        // 3. Create a blob, generate a URL, cache it, and import.
+        const blob = new Blob([scriptText], { type: 'text/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        blobCache.set(cacheId, blobUrl);
+
+        return import(blobUrl);
+      }
+
+      /**
+       * The main entry point to load and run the application.
+       */
+      async function main() {
+        try {
+            console.log('Loading modules...');
+            
+            // 1. Load core engine and the remote game registry.
+            await importFromBlobUrl(scriptUrls.engine);
+            const gameRegistryModule = await importFromBlobUrl(scriptUrls.gameRegistry);
+
+            // Augment the game registry with each local game.
+            for (const game of localGamesToAdd) {
+              let newGameEntry;
+
+              if (game.fileName) { // Game is in a separate file
+                gameUrls[game.fileName] = `./games/${game.fileName}`;
+                newGameEntry = {
+                  id: game.id, name: game.name,
+                  loader: () => window.importFromBlobUrl(gameUrls[game.fileName]),
+                };
+              } else if (game.scriptId) { // Game is in a <script type="text/plain"> tag
+                const sourceElement = document.getElementById(game.scriptId);
+                if (!sourceElement) throw new Error(`Script tag with id "${game.scriptId}" not found.`);
+                const source = sourceElement.textContent;
+                newGameEntry = {
+                  id: game.id, name: game.name,
+                  loader: () => window.importFromString(source, game.id),
+                };
+              }
+
+              // Add the game to the GAME_LIST and GAME_REGISTRY.
+              if (newGameEntry) {
+                gameRegistryModule.GAME_LIST.push({ id: newGameEntry.id, name: newGameEntry.name }); 
+                gameRegistryModule.GAME_REGISTRY[newGameEntry.id] = newGameEntry;
+              }
+            }
+
+            // 3. Finally, import the main entry point which will now see the augmented game list.
+            await importFromBlobUrl(scriptUrls.main);
+
+            console.log('Application initialized with augmented game registry.');
+        } catch (error) {
+            console.error('Failed to initialize application:', error);
+            document.getElementById('app').innerHTML = `<div style="color: red; padding: 20px;">Error: ${error.message}</div>`;
+        }
+      }
+
+      main();
+
+      // For debugging and advanced use cases (like augmenting the game registry),
+      // expose the loader to the global scope.
+      window.importFromBlobUrl = importFromBlobUrl;
+      window.importFromString = importFromString;
+    </script>
+  </head>
+  <body>
+    <div id="app">
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- INLINE GAME DEFINITIONS                                                           -->
+    <!-- ================================================================================= -->
+    <!-- 
+      Define inline games here using script tags with a "text/plain" type.
+      This gives you proper syntax highlighting in your editor.
+      The 'id' must match the 'scriptId' in the 'localGamesToAdd' config array.
+    -->
+    <script type="text/javascript" id="inline-snake-game">
+      import { GameModel } from "../GameModel.js";
+      import { interval, filter } from "rxjs";
+
+      export class InlineSnakeGame extends GameModel {
+          constructor(audio) {
+              super(10, 10, 'inline-snake', audio);
+              this.snake = [{ x: 5, y: 5, id: this.uid(), type: 0 }];
+              this.direction = { x: 0, y: 1 };
+          }
+          start() {
+              this.status$.next("Started!");
+              this.state$.next(this.snake);
+          }
+          getRenderConfig() {
+              return { geometry: "box", colors: { 0: 0x00ffff } };
+          }
+      }
+    </script>
+  </body>
+</html>
