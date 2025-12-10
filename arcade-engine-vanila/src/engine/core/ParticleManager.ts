@@ -5,8 +5,8 @@ import { Easing, type EasingType } from '../utils/easing';
 
 const STYLES: Record<string, ParticleStyle> = {
     EXPLODE: { count: 2, speed: 0.1, life: 2, easing: 'outExpo', scaleStart: 4, scaleEnd: 0 },
-    PUFF: { count: 6, speed: 0.02, life: 6, easing: 'outCirc', scaleStart: 2, scaleEnd: 0, upward: 0.05 },
-    CONFETTI: { count: 30, speed: 0.3, life: 3, easing: 'outSine', scaleStart: 1.5, scaleEnd: 0, gravity: -0.005 }
+    PUFF: { count: 3, speed: 0.4, life: 2, easing: 'outExpo', scaleStart: 2, scaleEnd: 0, upward: 0.05 },
+    CONFETTI: { count: 3, speed: 0.3, life: 3, easing: 'outSine', scaleStart: 1.5, scaleEnd: 0, gravity: -0.005 }
 };
 
 interface Particle {

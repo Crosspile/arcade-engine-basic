@@ -1,5 +1,6 @@
 import { GAME_LIST } from '../../GameRegistry';
 import type { GameId } from '../../engine/types';
+import type { GameRenderer } from '../../engine/core/GameRenderer';
 
 interface DebugUIState {
     gameId: GameId;
@@ -24,6 +25,7 @@ interface DebugCallbacks {
 export class DebugUI {
     private element: HTMLElement;
     private callbacks: DebugCallbacks;
+    private engine: GameRenderer;
     private state: DebugUIState;
 
     // DOM Element References
@@ -34,10 +36,13 @@ export class DebugUI {
     private statusEl!: HTMLSpanElement;
     private viewBtn!: HTMLButtonElement;
     private soundBtn!: HTMLButtonElement;
+    private fpsEl!: HTMLSpanElement;
+    private trianglesEl!: HTMLSpanElement;
 
-    constructor(callbacks: DebugCallbacks) {
+    constructor(callbacks: DebugCallbacks, engine: GameRenderer) {
         this.element = document.createElement('div');
         this.callbacks = callbacks;
+        this.engine = engine;
         this.state = {
             gameId: GAME_LIST[0].id,
             score: 0,
@@ -51,6 +56,7 @@ export class DebugUI {
 
         this.render();
         this.attachEventListeners();
+        this.startPerfMonitor();
     }
 
     private render() {
@@ -82,6 +88,10 @@ export class DebugUI {
                     <div class="flex justify-between text-xs"><span class="text-gray-400">Score</span><span class="text-yellow-400 font-bold" data-element="score">0</span></div>
                     <div class="flex justify-between text-xs"><span class="text-gray-400">Best</span><span class="text-gray-400 font-bold" data-element="highScore">0</span></div>
                     <div class="flex justify-between text-xs"><span class="text-gray-400">Moves/Lines</span><span class="text-blue-300 font-bold" data-element="subStat">0</span></div>
+                    <div class="h-px bg-white/5 my-1"></div>
+                    <div class="flex justify-between text-xs"><span class="text-gray-400">FPS</span><span class="text-green-400 font-bold" data-element="fps">0</span></div>
+                    <div class="flex justify-between text-xs"><span class="text-gray-400">Triangles</span><span class="text-green-400 font-bold" data-element="triangles">0</span></div>
+
                     <div class="flex justify-between text-xs mt-1 pt-1 border-t border-white/5"><span class="text-gray-500">Status</span><span class="text-gray-300 max-w-[100px] truncate text-right" data-element="status">Level 1</span></div>
                 </div>
                 <div class="h-px bg-white/5 my-1"></div>
@@ -105,6 +115,8 @@ export class DebugUI {
         this.statusEl = this.element.querySelector('[data-element="status"]') as HTMLSpanElement;
         this.viewBtn = this.element.querySelector('[data-action="toggleView"]') as HTMLButtonElement;
         this.soundBtn = this.element.querySelector('[data-action="toggleSound"]') as HTMLButtonElement;
+        this.fpsEl = this.element.querySelector('[data-element="fps"]') as HTMLSpanElement;
+        this.trianglesEl = this.element.querySelector('[data-element="triangles"]') as HTMLSpanElement;
     }
 
     private attachEventListeners() {
@@ -123,6 +135,15 @@ export class DebugUI {
                 case 'toggleSound': this.callbacks.onToggleSound(); break;
             }
         });
+    }
+
+    private startPerfMonitor() {
+        setInterval(() => {
+            const fps = Math.round(this.engine.fps);
+            const triangles = this.engine.triangles;
+            if (this.fpsEl.textContent !== String(fps)) this.fpsEl.textContent = String(fps);
+            if (this.trianglesEl.textContent !== String(triangles)) this.trianglesEl.textContent = String(triangles);
+        }, 500); // Update twice a second
     }
 
     public getElement(): HTMLElement {

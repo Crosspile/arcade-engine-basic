@@ -1,13 +1,16 @@
 
 import * as THREE from 'three';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { GameModel } from '../../games/GameModel';
+import { ModelManager } from './ModelManager';
 import { ParticleManager } from './ParticleManager';
 import { InputManager } from './InputManager';
 import { Menu3D, type MenuCallbacks } from './Menu3D';
 import type { MenuContext } from './MenuContext';
 import type { GameItem, SoundEmitter } from '../types';
 import { TWEEN } from '../utils/tween';
+import { Clock } from 'three';
+
 
 export class GameRenderer implements MenuContext {
     scene: THREE.Scene;
@@ -22,22 +25,33 @@ export class GameRenderer implements MenuContext {
     meshes: Map<string, THREE.Mesh>;
     textureCache: Map<string, THREE.CanvasTexture>;
     particles: ParticleManager;
+    modelManager: ModelManager;
     menu: Menu3D;
     gridHelper: THREE.GridHelper;
     cameraHelper: THREE.CameraHelper;
-    
+
     inputManager: InputManager;
     activeGame: GameModel | null = null;
     
     shake: number = 0;
     isOrtho: boolean = false;
     
-    requestRef: number = 0;
+    private animationFrameId: number = 0;
     renderConfig: any;
     
     private audio: SoundEmitter;
     private subs: Subscription[] = [];
     private updateHooks: (() => void)[] = [];
+    private clock = new Clock();
+
+    // Performance Stats
+    public fps: number = 0;
+    public triangles: number = 0;
+    
+    // FPS Limiter
+    private fpsLimit: number = 60;
+    private fpsInterval: number;
+    private then: number = 0;
     
     constructor(container: HTMLElement, inputManager: InputManager, callbacks: MenuCallbacks, audio: SoundEmitter, gameList: GameItem[]) {
         this.inputManager = inputManager;
@@ -86,13 +100,17 @@ export class GameRenderer implements MenuContext {
         this.meshes = new Map();
         this.textureCache = new Map();
         this.particles = new ParticleManager(this.scene);
+        this.modelManager = new ModelManager();
 
         // Menu is now parented to the camera for consistent scale
         this.menu = new Menu3D(this.activeCamera, inputManager, this, callbacks, this.audio, gameList);
         
         // Start Loop
-        this.animate = this.animate.bind(this);
-        this.animate();
+        this.renderLoop = this.renderLoop.bind(this);
+        this.renderLoop(0);
+
+        this.fpsInterval = 1000 / this.fpsLimit;
+        this.then = performance.now();
         
         // Resize observer
         this.onResize = this.onResize.bind(this);
@@ -225,6 +243,54 @@ export class GameRenderer implements MenuContext {
         this.menu.layoutHUD(visibleWidth, visibleHeight);
     }
 
+    private renderLoop = (time: number) => {
+        this.animationFrameId = requestAnimationFrame(this.renderLoop);
+        
+        const now = performance.now();
+        const elapsed = now - this.then;
+
+        // If enough time has passed, draw the next frame
+        if (elapsed < this.fpsInterval) {
+            return;
+        }
+        this.then = now - (elapsed % this.fpsInterval);
+
+        // Calculate FPS
+        const deltaTime = elapsed / 1000; // Use throttled delta time
+        this.fps = 1000 / elapsed;
+        this.particles.update(deltaTime);
+
+        if (this.activeGame) {
+            this.updateHooks.forEach(hook => hook());
+        }
+
+        const currentCam = this.externalCamera || this.activeCamera;
+
+        if (!this.externalCamera) {
+            if (this.shake > 0) {
+                const shakeIntensity = 0.2 * this.shake;
+                this.activeCamera.position.x += (Math.random() - 0.5) * shakeIntensity;
+                this.activeCamera.position.y += (Math.random() - 0.5) * shakeIntensity;
+                this.shake *= 0.9;
+                if (this.shake < 0.01) {
+                    this.shake = 0;
+                    if (this.activeGame) this.syncCamera();
+                }
+            }
+        }
+
+        if (this.cameraHelper.visible) {
+            this.cameraHelper.update();
+        }
+
+        // Render the scene
+        this.renderer.render(this.scene, currentCam);
+        TWEEN.update();
+
+        // Update triangle count after render
+        this.triangles = this.renderer.info.render.triangles;
+    };
+
     private _setupOrthoCamera(gameWidth: number, gameHeight: number, aspect: number) {
         // Use a fixed orthographic view height for consistent UI scale
         const ORTHO_VIEW_HEIGHT = 12;
@@ -302,7 +368,7 @@ export class GameRenderer implements MenuContext {
         return tex;
     }
 
-    sync(items: GameItem[]) {
+    async sync(items: GameItem[]) {
         if (!this.activeGame) return;
         
         const activeIds = new Set<string>();
@@ -310,24 +376,52 @@ export class GameRenderer implements MenuContext {
         const offsetX = (this.activeGame.width * tileSize) / 2 - 0.5;
         const offsetY = (this.activeGame.height * tileSize) / 2 - 0.5;
 
-        items.forEach(item => {
+        for (const item of items) {
             activeIds.add(item.id);
             let mesh = this.meshes.get(item.id);
             const tx = item.x * tileSize - offsetX;
             const ty = item.y * tileSize - offsetY;
             
             const zOffset = (item.type === 0) ? -0.1 : 0;
-            const color = this.renderConfig.colors[item.type] || 0xffffff;
+            const color = (this.renderConfig.colors && this.renderConfig.colors[item.type]) || 0xffffff;
 
             if (!mesh) {
-                let geom;
-                if (this.renderConfig.geometry === 'cylinder') geom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 32);
-                else geom = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-                
-                if (this.renderConfig.geometry === 'cylinder') geom.rotateX(Math.PI / 2);
-                
-                const mat = new THREE.MeshBasicMaterial({ color });
-                mesh = new THREE.Mesh(geom, mat);
+                // --- NEW: Custom Model Loading ---
+                if (item.modelId && this.renderConfig.models && this.renderConfig.models[item.modelId]) {
+                    const modelUrl = this.renderConfig.models[item.modelId];
+                    try {
+                        const modelGroup = await this.modelManager.get(modelUrl);
+                        // Assuming the loaded model is a Mesh or a Group containing a Mesh
+                        mesh = modelGroup.children[0] as THREE.Mesh;
+                        if (!mesh) {
+                             console.warn(`Model at ${modelUrl} does not have a valid mesh at children[0].`);
+                             continue;
+                        }
+                        // Apply a default material if none exists
+                        if (!mesh.material) {
+                            if (this.renderConfig.shading === 'standard') {
+                                mesh.material = new THREE.MeshStandardMaterial({ color });
+                            } else {
+                                mesh.material = new THREE.MeshBasicMaterial({ color });
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Could not load model for item ${item.id}`, error);
+                        continue; // Skip this item if model fails to load
+                    }
+                } else {
+                    const geom = this.createGeometry(item.type);
+                    const mat = this.renderConfig.shading === 'standard'
+                        ? new THREE.MeshStandardMaterial({ color, metalness: 0.2, roughness: 0.8 })
+                        : new THREE.MeshBasicMaterial({ color });
+                    mesh = new THREE.Mesh(geom, mat);
+                }
+
+                // Common setup for new meshes
+                if (item.scale) {
+                    mesh.scale.set(item.scale, item.scale, item.scale);
+                }
+
                 this.group.add(mesh);
                 this.meshes.set(item.id, mesh);
 
@@ -342,7 +436,7 @@ export class GameRenderer implements MenuContext {
                     TWEEN.to(mesh.position, { x: tx, y: ty }, 400, 'elastic');
                 }
             } else {
-                const mat = mesh.material as THREE.MeshBasicMaterial;
+                const mat = mesh.material as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
                 
                 if (item.text !== undefined) {
                     const tex = this.createLabelTexture(item.text, color, item.textColor);
@@ -363,7 +457,7 @@ export class GameRenderer implements MenuContext {
                     TWEEN.to(mesh.position, { x: tx, y: ty, z: zOffset }, 150);
                 }
             }
-        });
+        }
 
         this.meshes.forEach((m, id) => {
             if (!activeIds.has(id)) {
@@ -372,6 +466,28 @@ export class GameRenderer implements MenuContext {
                 this.meshes.delete(id);
             }
         });
+    }
+
+    private createGeometry(type: number): THREE.BufferGeometry {
+        const geoType = this.renderConfig.geometry?.[type] || this.renderConfig.geometry?.['default'] || 'Box';
+        
+        // A simple factory for creating geometries
+        switch (geoType) {
+            case 'Cylinder':
+                const cylGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 32);
+                cylGeom.rotateX(Math.PI / 2);
+                return cylGeom;
+            case 'Sphere':
+                return new THREE.SphereGeometry(0.5, 32, 16);
+            case 'Torus':
+                return new THREE.TorusGeometry(0.4, 0.15, 16, 100);
+            case 'Icosahedron':
+                return new THREE.IcosahedronGeometry(0.5);
+            case 'Cone':
+                return new THREE.ConeGeometry(0.5, 1, 32);
+            default: // 'Box'
+                return new THREE.BoxGeometry(0.9, 0.9, 0.9);
+        }
     }
 
     disposeMesh(m: THREE.Mesh) {
@@ -399,35 +515,6 @@ export class GameRenderer implements MenuContext {
         if (this.activeGame) this.syncCamera();
     }
     
-    animate() {
-        this.requestRef = requestAnimationFrame(this.animate);
-        TWEEN.update();
-        this.particles.update();
-        
-        this.updateHooks.forEach(hook => hook());
-        
-        const currentCam = this.externalCamera || this.activeCamera;
-
-        if (!this.externalCamera) {
-            if (this.shake > 0) {
-                const shakeIntensity = 0.2 * this.shake;
-                this.activeCamera.position.x += (Math.random() - 0.5) * shakeIntensity;
-                this.activeCamera.position.y += (Math.random() - 0.5) * shakeIntensity;
-                this.shake *= 0.9;
-                if (this.shake < 0.01) {
-                    this.shake = 0;
-                    if (this.activeGame) this.syncCamera();
-                }
-            }
-        }
-
-        if (this.cameraHelper.visible) {
-            this.cameraHelper.update();
-        }
-        
-        this.renderer.render(this.scene, currentCam);
-    }
-    
     getGridFromRay(raycaster: THREE.Raycaster) {
         if (!this.activeGame) return null;
         const intersects = raycaster.intersectObjects(this.group.children);
@@ -448,7 +535,7 @@ export class GameRenderer implements MenuContext {
 
     destroy() {
         window.removeEventListener('resize', this.onResize);
-        cancelAnimationFrame(this.requestRef);
+        cancelAnimationFrame(this.animationFrameId);
         this.subs.forEach(s => s.unsubscribe());
         
         this.menu.destroy();

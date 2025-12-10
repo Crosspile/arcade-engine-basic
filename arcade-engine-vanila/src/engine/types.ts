@@ -41,10 +41,12 @@ export interface GameEffect {
 }
 
 export interface RenderConfig {
-    geometry: 'box' | 'cylinder' | 'custom';
+    geometry?: 'box' | 'cylinder' | Record<number | 'default', string>;
     colors: Record<number, number>;
     bgColor: number;
-    customGeometry?: () => any; // THREE.BufferGeometry
+    shading?: 'basic' | 'standard';
+    models?: Record<string, string>;
+    customGeometry?: () => any;
 }
 
 export type InputType = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SELECT';

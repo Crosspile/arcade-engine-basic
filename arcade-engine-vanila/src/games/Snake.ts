@@ -77,6 +77,10 @@ export class SnakeGame extends GameModel {
     }
 
     getRenderConfig() {
-        return { geometry: 'box' as const, colors: { 0: 0x00ff00, 1: 0x008800, 2: 0xff0000 }, bgColor: 0x0a1a0a };
+        return { 
+            geometry: 'box' as const, 
+            colors: { 0: 0x00ff00, 1: 0x008800, 2: 0xff0000 },
+            bgColor: 0x0a1a0a
+        };
     }
 }

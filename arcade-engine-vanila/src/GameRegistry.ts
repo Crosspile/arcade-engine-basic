@@ -12,16 +12,23 @@ const DEBUG_HANDLERS: Record<string, (game: GameModel) => void> = {
     }
 };
 
+type GameModule = {
+    default: new (audio?: SoundEmitter) => GameModel;
+};
+
 export interface GameDefinition {
     id: string;
     name: string;
     // The class is now loaded via a dynamic import function
-    loader: () => Promise<{ default: new (audio?: SoundEmitter) => GameModel }>;
+    loader: () => Promise<GameModule>;
     debug?: (game: GameModel) => void;
 }
 
 // The single source of truth for all games
 const ALL_GAMES: GameDefinition[] = [
+    // The 'as any' cast is no longer needed if the imported modules have a default export.
+    { id: 'geometryshowcase', name: 'Geo Showcase', loader: () => import('./games/GeometryShowcase'), debug: DEBUG_HANDLERS.default },
+    { id: 'spaceinvaders', name: 'Space Invaders', loader: () => import('./games/SpaceInvaders'), debug: DEBUG_HANDLERS.default },
     { id: 'snake', name: 'Snake', loader: () => import('./games/Snake') as any, debug: DEBUG_HANDLERS.default },
     { id: 'sokoban', name: 'Sokoban', loader: () => import('./games/Sokoban'), debug: DEBUG_HANDLERS.default },
     { id: 'match3', name: 'Match-3', loader: () => import('./games/Match3'), debug: DEBUG_HANDLERS.default},

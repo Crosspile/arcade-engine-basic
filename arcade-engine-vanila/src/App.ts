@@ -50,6 +50,7 @@ export class App {
         this.createDOMStructure();
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         this.init();
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
     }
 
     private createDOMStructure() {
@@ -154,7 +155,7 @@ export class App {
             onToggleView: () => this.handleToggleView(),
             onToggleSound: () => this.handleToggleSound(),
             onToggleMenu: () => this.handleToggleMenu(),
-        });
+        }, this.engine!);
         if (this.inputManager) {
             this.virtualControls = new VirtualControls({
                 onMove: (direction) => this.inputManager?.emitVirtual(direction as any),
@@ -211,5 +212,15 @@ export class App {
     
     private handleToggleMenu = () => {
         this.engine?.toggleMenu();
+    };
+
+    private handleVisibilityChange = () => {
+        if (!this.activeGame) return;
+
+        if (document.hidden) {
+            this.activeGame.setPaused(true);
+        } else if (!this.isMenuOpen) { // Only resume if the menu isn't open
+            this.activeGame.setPaused(false);
+        }
     };
 }
