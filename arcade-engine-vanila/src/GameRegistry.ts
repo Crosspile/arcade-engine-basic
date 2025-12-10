@@ -45,6 +45,7 @@ const ALL_GAMES: GameDefinition[] = [
     { id: 'mazerun', name: 'Maze Run', loader: () => import('./games/MazeRun'), debug: DEBUG_HANDLERS.default },
     { id: 'sudoku', name: 'Sudoku', loader: () => import('./games/Sudoku'), debug: DEBUG_HANDLERS.default },
     { id: 'crossword', name: 'Mini Crossword', loader: () => import('./games/Crossword'), debug: DEBUG_HANDLERS.default },
+    { id: 'pacman', name: 'Pacman', loader: () => import('./games/Pacman'), debug: DEBUG_HANDLERS.default },
 ];
 
 

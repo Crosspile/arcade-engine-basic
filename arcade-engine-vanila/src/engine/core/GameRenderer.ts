@@ -126,6 +126,7 @@ export class GameRenderer implements MenuContext {
         // Toggle helpers with debug camera
         this.gridHelper.visible = !!cam;
         this.cameraHelper.visible = !!cam;
+        this.postProcessor.setCamera(cam || this.activeCamera);
     }
     
     setGame(game: GameModel) {

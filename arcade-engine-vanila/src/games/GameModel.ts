@@ -81,4 +81,13 @@ export abstract class GameModel {
             this.subStat$.next(this.subStat);
         }
     }
+
+    // Default debug action for "Force Win"
+    public debugAction(): void {
+        if ((this as any).handleWin) {
+            (this as any).handleWin();
+        } else {
+            console.log('Debug win not implemented for this game');
+        }
+    }
 }
