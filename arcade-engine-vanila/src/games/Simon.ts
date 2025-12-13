@@ -16,6 +16,7 @@ export class SimonGame extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         // Progressive expansion: 2x2, 3x3, 4x4, etc.
         const size = Math.min(6, 2 + Math.floor((this.level - 1)));
         this.resize(size, size);

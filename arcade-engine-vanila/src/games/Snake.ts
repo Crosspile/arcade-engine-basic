@@ -12,6 +12,7 @@ export class SnakeGame extends GameModel {
     constructor(audio?: SoundEmitter) { super(15, 15, 'snake', audio); }
 
     start() {
+        this.isGameOver = false;
         this.snake = [{ x: 7, y: 7, id: this.uid(), type: 0 }];
         this.d = { x: 0, y: 1 };
         this.spawn();

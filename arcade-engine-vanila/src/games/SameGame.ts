@@ -13,6 +13,7 @@ export class SameGame extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         // Grow from 6x6 to 12x12
         const size = Math.min(12, 5 + this.level);
         this.resize(size, size);

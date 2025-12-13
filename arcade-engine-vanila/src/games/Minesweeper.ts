@@ -9,6 +9,7 @@ export class Minesweeper extends GameModel {
     constructor(audio?: SoundEmitter) { super(10, 10, 'minesweeper', audio); }
 
     start() {
+        this.isGameOver = false;
         this.grid = Array(10).fill(null).map(() => Array(10).fill(null).map(() => ({ mine: false, state: 'covered' as const, neighbors: 0 })));
         this.generated = false;
         this.emit();

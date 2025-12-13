@@ -10,6 +10,7 @@ export class Crossword extends GameModel {
     constructor(audio?: SoundEmitter) { super(5, 5, 'crossword', audio); }
 
     start() {
+        this.isGameOver = false;
         // Simple 5x5 Grid. 
         // 0 = Black, Letter = Solution
         const puzzle = [

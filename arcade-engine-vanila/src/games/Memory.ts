@@ -17,6 +17,7 @@ export class MemoryGame extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         // Prog: 2x2, 4x2, 4x3, 4x4, 5x4, 6x5, 6x6
         const levels = [
             [2,2], [4,2], [4,3], [4,4], [5,4], [6,5], [6,6], [8,6], [8,7], [8,8]

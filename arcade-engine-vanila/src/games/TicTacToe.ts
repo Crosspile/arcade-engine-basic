@@ -15,6 +15,7 @@ export class TicTacToe extends GameModel {
     }
 
     startLevel() {
+        this.isGameOver = false;
         this.resize(this.gridSize, this.gridSize);
         this.grid = Array(this.width * this.height).fill(0);
         this.turn = 1;
@@ -43,7 +44,7 @@ export class TicTacToe extends GameModel {
             } else if (this.grid.every(c => c !== 0)) {
                 this.status$.next('DRAW');
                 this.isGameOver = true;
-                setTimeout(() => this.effects$.next({ type: 'GAMEOVER' }), 2000);
+                setTimeout(() => this.startLevel(), 2000);
             } else {
                 this.turn = 2;
                 this.status$.next('CPU Turn');
@@ -67,11 +68,11 @@ export class TicTacToe extends GameModel {
                 this.status$.next('CPU WINS');
                 this.isGameOver = true;
                 this.audio.playGameOver();
-                setTimeout(() => this.effects$.next({ type: 'GAMEOVER' }), 2000);
+                setTimeout(() => this.startLevel(), 2000);
             } else if (this.grid.every(c => c !== 0)) {
                 this.status$.next('DRAW');
                 this.isGameOver = true;
-                setTimeout(() => this.effects$.next({ type: 'GAMEOVER' }), 2000);
+                setTimeout(() => this.startLevel(), 2000);
             } else {
                 this.turn = 1;
                 this.status$.next('Your Turn');

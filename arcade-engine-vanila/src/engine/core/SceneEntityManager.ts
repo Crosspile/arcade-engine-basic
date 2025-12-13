@@ -46,7 +46,11 @@ export class SceneEntityManager {
             const ty = item.y * tileSize - offsetY;
             
             const zOffset = (item.type === 0) ? -0.1 : 0;
-            const color = (this.renderConfig.colors && this.renderConfig.colors[item.type]) || 0xffffff;
+            const color = item.color !== undefined ? item.color : ((this.renderConfig.colors && this.renderConfig.colors[item.type] !== undefined) 
+                ? this.renderConfig.colors[item.type] 
+                : 0xffffff);
+            const opacity = item.opacity !== undefined ? item.opacity : 1;
+            const transparent = opacity < 1;
 
             if (!mesh) {
                 if (item.modelId && this.renderConfig.models && this.renderConfig.models[item.modelId]) {
@@ -55,9 +59,10 @@ export class SceneEntityManager {
                         const modelGroup = await this.modelManager.get(modelUrl);
                         mesh = modelGroup.children[0] as THREE.Mesh;
                         if (!mesh.material) {
+                            const matParams: any = { color, transparent, opacity };
                             mesh.material = this.renderConfig.shading === 'standard' 
-                                ? new THREE.MeshStandardMaterial({ color }) 
-                                : new THREE.MeshBasicMaterial({ color });
+                                ? new THREE.MeshStandardMaterial(matParams) 
+                                : new THREE.MeshBasicMaterial(matParams);
                         }
                     } catch (error) {
                         console.error(`Could not load model for item ${item.id}`, error);
@@ -65,9 +70,14 @@ export class SceneEntityManager {
                     }
                 } else {
                     const geom = this.createGeometry(item.type);
+                    const matParams: any = { color, transparent, opacity };
+                    if (this.renderConfig.shading === 'standard') {
+                        matParams.metalness = 0.2;
+                        matParams.roughness = 0.8;
+                    }
                     const mat = this.renderConfig.shading === 'standard'
-                        ? new THREE.MeshStandardMaterial({ color, metalness: 0.2, roughness: 0.8 })
-                        : new THREE.MeshBasicMaterial({ color });
+                        ? new THREE.MeshStandardMaterial(matParams)
+                        : new THREE.MeshBasicMaterial(matParams);
                     mesh = new THREE.Mesh(geom, mat);
                 }
 
@@ -84,16 +94,27 @@ export class SceneEntityManager {
                 this.group.add(mesh);
                 this.meshes.set(item.id, mesh);
 
-                if (item.spawnStyle === 'instant') {
-                    mesh.position.set(tx, ty, zOffset);
-                } else if (item.spawnStyle === 'pop') {
-                    mesh.position.set(tx, ty, zOffset);
-                    mesh.scale.set(0, 0, 0);
-                    TWEEN.to(mesh.scale, { x: 1, y: 1, z: 1 }, 200, 'outBack');
-                } else {
-                    mesh.position.set(tx, ty + 10, zOffset);
-                    TWEEN.to(mesh.position, { x: tx, y: ty }, 400, 'elastic');
+                if (item.rotation) {
+                    mesh.rotation.set(item.rotation.x || 0, item.rotation.y || 0, item.rotation.z || 0);
                 }
+
+                switch( item.spawnStyle ) {
+                    case 'pop':{
+                        mesh.position.set(tx, ty, zOffset);
+                        mesh.scale.set(0, 0, 0);
+                        TWEEN.to(mesh.scale, { x: 1, y: 1, z: 1 }, 200, 'outBack');
+                        break;
+                    }
+                    case 'elastic':{
+                        mesh.position.set(tx, ty + 5, zOffset);
+                        TWEEN.to(mesh.position, { x: tx, y: ty }, 400, 'elastic');
+                        break;
+                    }
+                    default:{
+                        mesh.position.set(tx, ty, zOffset);
+                    }
+                }
+
             } else {
                 const mat = mesh.material as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
                 if (item.text !== undefined) {
@@ -107,8 +128,20 @@ export class SceneEntityManager {
                     if (mat.map) { mat.map = null; mat.needsUpdate = true; }
                     mat.color.setHex(color);
                 }
+                
+                if (mat.opacity !== opacity) {
+                    mat.opacity = opacity;
+                    mat.transparent = transparent;
+                    mat.needsUpdate = true;
+                }
+
                 if (Math.abs(mesh.position.x - tx) > 0.01 || Math.abs(mesh.position.y - ty) > 0.01 || mesh.position.z !== zOffset) {
-                    TWEEN.to(mesh.position, { x: tx, y: ty, z: zOffset }, 150);
+                    const duration = item.tween?.duration !== undefined ? item.tween.duration : 150;
+                    TWEEN.to(mesh.position, { x: tx, y: ty, z: zOffset }, duration);
+                }
+
+                if (item.rotation) {
+                    TWEEN.to(mesh.rotation, { x: item.rotation.x || 0, y: item.rotation.y || 0, z: item.rotation.z || 0 }, 150);
                 }
             }
         }
@@ -123,7 +156,12 @@ export class SceneEntityManager {
     }
 
     private createGeometry(type: number): THREE.BufferGeometry {
-        const geoType = this.renderConfig?.geometry?.[type] || this.renderConfig?.geometry?.['default'] || 'Box';
+        if (this.renderConfig?.customGeometry) {
+            const geo = this.renderConfig.customGeometry(type);
+            if (geo) return geo;
+        }
+        const geometry = this.renderConfig?.geometry;
+        const geoType = (geometry as any)?.[type] || (geometry as any)?.['default'] || 'Box';
         switch (geoType) {
             case 'Cylinder': return new THREE.CylinderGeometry(0.4, 0.4, 0.3, 32).rotateX(Math.PI / 2);
             case 'Sphere': return new THREE.SphereGeometry(0.5, 32, 16);

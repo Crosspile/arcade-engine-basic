@@ -13,6 +13,7 @@ export class LightsOutGame extends GameModel {
     }
 
     startLevel() {
+        this.isGameOver = false;
         const size = Math.min(10, 3 + (this.level - 1));
         this.resize(size, size);
         

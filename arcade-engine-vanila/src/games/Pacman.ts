@@ -75,6 +75,7 @@ export default class Pacman extends GameModel {
     }
 
     startLevel() {
+        this.isGameOver = false;
         if (this.level === 1) {
             this.parseMap();
         } else {

@@ -10,6 +10,7 @@ export class Sudoku extends GameModel {
     constructor(audio?: SoundEmitter) { super(9, 9, 'sudoku', audio); }
 
     start() {
+        this.isGameOver = false;
         this.generateLevel();
     }
 

@@ -17,6 +17,7 @@ export class SokobanGame extends GameModel {
     }
 
     startLevel() {
+        this.isGameOver = false;
         const size = Math.min(12, 6 + Math.floor(this.level / 2));
         this.resize(size, size);
         this.generateLevel();

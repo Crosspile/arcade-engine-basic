@@ -27,7 +27,14 @@ export interface GameDefinition {
 // The single source of truth for all games
 const ALL_GAMES: GameDefinition[] = [
     // The 'as any' cast is no longer needed if the imported modules have a default export.
-    { id: 'geometryshowcase', name: 'Geo Showcase', loader: () => import('./games/GeometryShowcase'), debug: DEBUG_HANDLERS.default },
+    { id: 'reversi', name: 'Reversi', loader: () => import('./games/Reversi'), debug: DEBUG_HANDLERS.default },
+    { id: 'rushhour', name: 'Rush Hour', loader: () => import('./games/RushHour'), debug: DEBUG_HANDLERS.default },
+    { id: 'pipemaze', name: 'Pipe Maze', loader: () => import('./games/PipeMaze'), debug: DEBUG_HANDLERS.default },
+    { id: 'pipemania', name: 'Pipe Mania', loader: () => import('./games/PipeMania'), debug: DEBUG_HANDLERS.default },
+    { id: 'qix', name: 'Qix', loader: () => import('./games/Qix'), debug: DEBUG_HANDLERS.default },
+    { id: 'connect4', name: 'Connect 4', loader: () => import('./games/Connect4'), debug: DEBUG_HANDLERS.default },
+    { id: 'pegsolitaire', name: 'Peg Solitaire', loader: () => import('./games/PegSolitaire'), debug: DEBUG_HANDLERS.default },
+    { id: 'loderunner', name: 'Lode Runner', loader: () => import('./games/LodeRunner'), debug: DEBUG_HANDLERS.default },
     { id: 'spaceinvaders', name: 'Space Invaders', loader: () => import('./games/SpaceInvaders'), debug: DEBUG_HANDLERS.default },
     { id: 'snake', name: 'Snake', loader: () => import('./games/Snake') as any, debug: DEBUG_HANDLERS.default },
     { id: 'sokoban', name: 'Sokoban', loader: () => import('./games/Sokoban'), debug: DEBUG_HANDLERS.default },
@@ -46,6 +53,8 @@ const ALL_GAMES: GameDefinition[] = [
     { id: 'sudoku', name: 'Sudoku', loader: () => import('./games/Sudoku'), debug: DEBUG_HANDLERS.default },
     { id: 'crossword', name: 'Mini Crossword', loader: () => import('./games/Crossword'), debug: DEBUG_HANDLERS.default },
     { id: 'pacman', name: 'Pacman', loader: () => import('./games/Pacman'), debug: DEBUG_HANDLERS.default },
+    { id: 'bomberman', name: 'Bomberman', loader: () => import('./games/Bomberman'), debug: DEBUG_HANDLERS.default },
+    { id: 'geometryshowcase', name: 'Geo Showcase', loader: () => import('./games/GeometryShowcase'), debug: DEBUG_HANDLERS.default },
 ];
 
 

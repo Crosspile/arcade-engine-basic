@@ -12,6 +12,7 @@ export class TetrisGame extends GameModel {
     constructor(audio?: SoundEmitter) { super(10, 20, 'tetris', audio); }
 
     start() {
+        this.isGameOver = false;
         this.grid = Array(this.width).fill(null).map(() => Array(this.height).fill(null));
         this.spawn();
         this.status$.next('Lines: 0');

@@ -24,10 +24,13 @@ export interface GameItem {
     type: number;
     x: number;
     y: number;
-    spawnStyle?: 'instant' | 'pop' | 'drop';
+    spawnStyle?: 'elastic' | 'pop' | 'drop';
     tween?: TweenConfig;
     text?: string;
     textColor?: string;
+    rotation?: { x?: number, y?: number, z?: number };
+    color?: number;
+    opacity?: number;
     [key: string]: any;
 }
 
@@ -41,12 +44,12 @@ export interface GameEffect {
 }
 
 export interface RenderConfig {
-    geometry?: 'box' | 'cylinder' | Record<number | 'default', string>;
+    geometry?: 'box' | 'cylinder' | { [key: number]: string; default?: string };
     colors: Record<number, number>;
     bgColor: number;
     shading?: 'basic' | 'standard';
     models?: Record<string, string>;
-    customGeometry?: () => any;
+    customGeometry?: (type: number) => any;
 }
 
 export type InputType = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'SELECT';

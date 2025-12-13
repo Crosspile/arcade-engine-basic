@@ -13,6 +13,7 @@ export class Match3Game extends GameModel {
     }
 
     start() {
+        this.isGameOver = false;
         this.grid = Array(this.width).fill(null).map(() => Array(this.height).fill(null));
         for (let x = 0; x < this.width; x++) {
             for (let y = 0; y < this.height; y++) {

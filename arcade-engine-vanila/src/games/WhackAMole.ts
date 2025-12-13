@@ -15,6 +15,7 @@ export class WhackAMole extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         const size = Math.min(5, 2 + Math.floor((this.level-1)/2));
         this.resize(size, size);
         

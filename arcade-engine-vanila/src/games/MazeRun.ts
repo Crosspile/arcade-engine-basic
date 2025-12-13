@@ -16,6 +16,7 @@ export class MazeRun extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         this.isProcessingWin = false;
         // Grow size. Always odd.
         const s = Math.min(25, 9 + (this.level * 2));

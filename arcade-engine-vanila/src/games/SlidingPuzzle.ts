@@ -13,6 +13,7 @@ export class SlidingPuzzle extends GameModel {
     }
     
     startLevel() {
+        this.isGameOver = false;
         // 3x3 (level 1), 4x4 (level 2), 5x5...
         const size = Math.min(6, 2 + this.level);
         this.resize(size, size);

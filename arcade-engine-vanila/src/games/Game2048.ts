@@ -11,6 +11,7 @@ export class Game2048 extends GameModel {
     }
 
     start() {
+        this.isGameOver = false;
         this.pieces = [];
         this.spawn();
         this.spawn();
